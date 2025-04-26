@@ -1,3 +1,56 @@
+# Hướng dẫn chạy với Helm Chart để deploy lên K8s
+- Kết nối vào cluster (nếu chưa làm):
+```
+gcloud container clusters get-credentials erp-next-cluster   --region asia-southeast1   --project erpnext-ptuddn-454813
+```
+- Thực hiện cài đặt:
+```
+helm repo add frappe https://helm.erpnext.com
+helm repo add nfs-ganesha-server-and-external-provisioner https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner
+helm repo update
+```
+```
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml
+```
+```
+kubectl create namespace nfs
+helm repo add nfs-ganesha-server-and-external-provisioner https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner
+helm upgrade --install -n nfs in-cluster nfs-ganesha-server-and-external-provisioner/nfs-server-provisioner \
+  --set 'storageClass.mountOptions={vers=4.1}' \
+  --set persistence.enabled=true \
+  --set persistence.size=32Gi
+```
+- Đợi cái trên chạy xong mới chạy tiếp. Kiểm tra bằng ```kubectl get all -n nfs```. Thấy 1/1 hết là đc. (Thật ra ko đợi chắc cũng ko sao đâu, vì CI-CD chắc ko biết đợi) Rồi chạy tiếp cái sau:
+```
+kubectl create namespace erpnext
+helm upgrade --install frappe-bench --namespace erpnext -f erpnext/values.yaml frappe/erpnext
+```
+- Kiểm tra bằng ```kubectl get all -n erpnext```. Thấy 2 cái pod "frappe-bench-erpnext-new-site" và "frappe-bench-erpnext-conf-bench" Completed và còn lại Running là xong.
+
+- Truy cập vào ```http://app.erpnext-uet.great-site.net/```
+- Tài khoản: "Administrator" - Mật khẩu: "admin"
+
+## Cách gỡ cài đặt toàn bộ
+```
+helm uninstall frappe-bench -n erpnext
+helm uninstall in-cluster -n nfs
+```
+```
+kubectl delete pod --all --grace-period=0 --force -n nfs
+kubectl delete pvc --all --grace-period=0 --force -n nfs
+kubectl delete pv --all --grace-period=0 --force -n nfs
+kubectl delete configmap --all --grace-period=0 --force -n nfs
+kubectl delete secret --all --grace-period=0 --force -n nfs
+
+kubectl delete pod --all --grace-period=0 --force -n erpnext
+kubectl delete pvc --all --grace-period=0 --force -n erpnext
+kubectl delete pv --all --grace-period=0 --force -n erpnext
+kubectl delete configmap --all --grace-period=0 --force -n erpnext
+kubectl delete secret --all --grace-period=0 --force -n erpnext
+
+kubectl delete namespace erpnext
+kubectl delete namespace nfs
+```
 # Contents
 
 ### Frappe/ERPNext Helm Chart
