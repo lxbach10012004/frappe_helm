@@ -11,9 +11,14 @@
 # dbExistingSecret: ""
 # dbExistingSecretPasswordKey: "password"
 
+# image:
+#   repository: frappe/erpnext
+#   tag: v15.58.2
+#   pullPolicy: IfNotPresent
+
 image:
-  repository: frappe/erpnext
-  tag: v15.58.2
+  repository: asia-southeast1-docker.pkg.dev/erpnext-ptuddn-454813/custom-erp/custom-erpnext
+  tag: "1.0.0"
   pullPolicy: IfNotPresent
 
 nginx:
@@ -44,8 +49,7 @@ nginx:
     initialDelaySeconds: 5
     periodSeconds: 10
   service:
-    type: ClusterIP
-    port: 8080
+    type: ClusterIP #NodePort #LoadBalancer
   resources: {}
   nodeSelector: {}
   tolerations: []
@@ -259,36 +263,50 @@ persistence:
     enabled: true
     # existingClaim: ""
     size: 8Gi
-    # storageClass: "nfs"
+    storageClass: "nfs"
     accessModes:
     - ReadWriteMany
   logs:
     # Container based log search and analytics stack recommended
-    enabled: false
+    enabled: true
     # existingClaim: ""
     size: 8Gi
-    # storageClass: "nfs"
+    storageClass: "nfs"
     accessModes:
     - ReadWriteMany
 
-# Ingress
+# # Ingress
+# ingress:
+#   # ingressName: ""
+#   # className: ""
+#   enabled: true
+#   annotations: {}
+#     # kubernetes.io/ingress.class: nginx
+#     # kubernetes.io/tls-acme: "true"
+#     # cert-manager.io/cluster-issuer: letsencrypt-prod
+#   hosts:
+#   - host: erp.cluster.local
+#     paths:
+#     - path: /
+#       pathType: ImplementationSpecific
+#   tls: []
+#   #  - secretName: auth-server-tls
+#   #    hosts:
+#   #      - auth-server.local
+
 ingress:
-  # ingressName: ""
-  # className: ""
-  enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
   hosts:
-  - host: erp.cluster.local
-    paths:
-    - path: /
-      pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: auth-server-tls
-  #    hosts:
-  #      - auth-server.local
+    - host: app.erpnext-uet.great-site.net
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - hosts:
+        - app.erpnext-uet.great-site.net
+      secretName: erpnext-tls
 
 jobs:
   volumePermissions:
@@ -315,10 +333,10 @@ jobs:
 
   createSite:
     # jobName: ""
-    enabled: false
+    enabled: true
     forceCreate: false
-    siteName: "erp.cluster.local"
-    adminPassword: "changeit"
+    siteName: "app.erpnext-uet.great-site.net"
+    adminPassword: "admin"
     adminExistingSecret: ""
     adminExistingSecretKey: "password"
     installApps:
