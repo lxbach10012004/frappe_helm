@@ -12,6 +12,20 @@ helm repo update
 ```
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.9.4/deploy/static/provider/cloud/deploy.yaml
 ```
+Thêm cnay để lên đc HTTPS
+```
+helm repo add jetstack https://charts.jetstack.io --force-update
+helm repo update
+
+helm install \
+  cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --create-namespace \
+  --version v1.17.2 \ # or your chosen version
+  --set installCRDs=true
+
+kubectl apply -f erpnext/cluster-issuer.yaml
+```
 ```
 kubectl create namespace nfs
 helm repo add nfs-ganesha-server-and-external-provisioner https://kubernetes-sigs.github.io/nfs-ganesha-server-and-external-provisioner
